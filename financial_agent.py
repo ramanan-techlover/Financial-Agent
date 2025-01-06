@@ -61,8 +61,8 @@ agent_team = Agent(
 )
 
 # Streamlit UI
-st.set_page_config(page_title="Chatbot Interface", layout="centered")
-st.title("Chatbot Interface")
+st.set_page_config(page_title="Finance Agent", layout="centered")
+st.title("Finance Agent - ChatBot")
 
 # Display existing messages
 for msg in st.session_state[MESSAGES]:
