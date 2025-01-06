@@ -8,7 +8,7 @@ from phi.tools.yfinance import YFinanceTools
 
 # Load environment variables
 load_dotenv()
-Groq.api_key = os.getenv("GROQ_API_KEY")
+Groq.api_key = os.getenv("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")
 
 # Initialize agents
 web_agent = Agent(
