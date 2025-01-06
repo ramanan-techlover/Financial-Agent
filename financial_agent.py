@@ -1,14 +1,13 @@
 import os
-from dotenv import load_dotenv
 import streamlit as st
 from phi.agent import Agent
 from phi.model.groq import Groq
 from phi.tools.duckduckgo import DuckDuckGo
 from phi.tools.yfinance import YFinanceTools
 
-# Load environment variables
-load_dotenv()
-Groq.api_key = os.getenv("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")
+# API KEY
+GROQ_API_KEY = "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"
+Groq.api_key = GROQ_API_KEY
 
 # Initialize agents
 web_agent = Agent(
