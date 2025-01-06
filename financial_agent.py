@@ -3,10 +3,24 @@ from phi.agent import Agent
 from phi.model.groq import Groq
 from phi.tools.duckduckgo import DuckDuckGo
 from phi.tools.yfinance import YFinanceTools
+from dataclasses import dataclass
+
+@dataclass
+class Message:
+    actor: str
+    payload: str
+
+USER = "user"
+ASSISTANT = "ai"
+MESSAGES = "messages"
 
 # API KEY
-GROQ_API_KEY = "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"
-Groq.api_key = GROQ_API_KEY
+GROQ_API_KEY = st.secrets["GROQ_API_KEY"]  # Correctly retrieve the API key from Streamlit secrets
+Groq.api_key = GROQ_API_KEY  # Set the API key for Groq
+
+# Initialize session state for conversation history
+if MESSAGES not in st.session_state:
+    st.session_state[MESSAGES] = [Message(actor=ASSISTANT, payload="Hi! How can I help you?")]
 
 # Initialize agents
 web_agent = Agent(
@@ -34,7 +48,6 @@ finance_agent = Agent(
     markdown=True,
 )
 
-
 agent_team = Agent(
     team=[web_agent, finance_agent],
     model=Groq(id="llama-3.1-70b-versatile"),
@@ -47,29 +60,26 @@ agent_team = Agent(
     markdown=True,
 )
 
-
 # Streamlit UI
 st.set_page_config(page_title="Chatbot Interface", layout="centered")
 st.title("Chatbot Interface")
 
-# Initialize session state for conversation history
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+# Display existing messages
+for msg in st.session_state[MESSAGES]:
+    st.chat_message(msg.actor).write(msg.payload)
 
-# Display conversation history
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+# Capture user input
+prompt: str = st.chat_input("Enter a prompt here")
 
-# User input
-if user_input := st.chat_input("Type your message here:"):
-    # Append user input to the conversation history
-    st.session_state.messages.append({"role": "user", "content": user_input})
+if prompt:
+    # Append user message to session state
+    st.session_state[MESSAGES].append(Message(actor=USER, payload=prompt))
+    st.chat_message(USER).write(prompt)  # Display user message immediately
 
     with st.spinner("Processing..."):
         try:
             # Get response from the agent team
-            assistant_response = agent_team.run(user_input, stream=False)
+            assistant_response = agent_team.run(prompt, stream=False)
 
             # Check if the response has a `.content` attribute or is a string
             if hasattr(assistant_response, "content"):
@@ -80,11 +90,8 @@ if user_input := st.chat_input("Type your message here:"):
                 response_content = "I couldn't process your request. Please try again."
 
             # Append assistant response to the conversation history
-            st.session_state.messages.append({"role": "assistant", "content": response_content})
-
-            # Display the assistant's response
-            with st.chat_message("assistant"):
-                st.markdown(response_content)
+            st.session_state[MESSAGES].append(Message(actor=ASSISTANT, payload=response_content))
+            st.chat_message(ASSISTANT).write(response_content)  # Display bot response immediately
 
         except Exception as e:
             # Handle exceptions with a fallback message
@@ -92,6 +99,5 @@ if user_input := st.chat_input("Type your message here:"):
             fallback_response = (
                 "I'm here to help! I can search the web or provide financial insights. Let me know what you need."
             )
-            st.session_state.messages.append({"role": "assistant", "content": fallback_response})
-            with st.chat_message("assistant"):
-                st.markdown(fallback_response)
+            st.session_state[MESSAGES].append(Message(actor=ASSISTANT, payload=fallback_response))
+            st.chat_message(ASSISTANT).write(fallback_response)  # Display fallback response immediately
